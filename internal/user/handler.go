@@ -101,3 +101,24 @@ func (s *UserServiceImpl) GetGetLoginDataForYJSY(ctx context.Context, req *user.
 	resp.Cookies = cookies
 	return resp, err
 }
+
+// GetInvitationCode implements the UserServiceImpl interface.
+func (s *UserServiceImpl) GetInvitationCode(ctx context.Context, request *user.GetInvitationCodeRequest) (
+	resp *user.GetInvitationCodeResponse, err error,
+) {
+	resp = new(user.GetInvitationCodeResponse)
+	loginData, err := metainfoContext.GetLoginData(ctx)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	l := service.NewUserService(ctx, loginData.Id, utils.ParseCookies(loginData.Cookies), s.ClientSet)
+	code, err := l.GetInvitationCode(loginData.Id, request.GetIsRefresh())
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	resp.Base = base.BuildSuccessResp()
+	resp.InvitationCode = code
+	return resp, err
+}

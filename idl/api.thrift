@@ -99,6 +99,13 @@ struct GetLoginDataForYJSYResponse{
     1: required string id
     2: required string cookies
 }
+struct GetInvitationCodeRequest{
+        1: optional bool isRefresh // 刷新邀请码
+}
+struct GetInvitationCodeResponse{
+        1: required model.BaseResp base,
+        2: required string invitation_code,
+}
 
 service UserService {
     // 后端自动登录（含验证码识别），该接口默认不提供给客户端，仅供测试
@@ -117,6 +124,8 @@ service UserService {
     TestAuthResponse TestAuth(1: TestAuthRequest request)(api.get="/api/v1/jwch/ping")
     // 获取用户信息
     GetUserInfoResponse GetUserInfo(1: GetUserInfoRequest request)(api.get="/api/v1/jwch/user/info")
+    // 获取邀请码
+    GetInvitationCodeResponse GetInvitationCode(1:GetInvitationCodeRequest request)(api.get="api/v1/user/invite")
 }
 
 ## ----------------------------------------------------------------------------

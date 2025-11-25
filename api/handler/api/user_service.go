@@ -278,3 +278,26 @@ func GetGetLoginDataForYJSY(ctx context.Context, c *app.RequestContext) {
 	resp.Cookies = cookies
 	pack.RespData(c, resp)
 }
+
+// GetInvitationCode .
+// @router api/v1/user/invite [GET]
+func GetInvitationCode(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req api.GetInvitationCodeRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+
+	resp := new(api.GetInvitationCodeResponse)
+	code, err := rpc.GetInvitationCodeRpc(ctx, &user.GetInvitationCodeRequest{
+		IsRefresh: req.IsRefresh,
+	})
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	resp.InvitationCode = code
+	pack.RespData(c, code)
+}

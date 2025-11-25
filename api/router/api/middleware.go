@@ -513,3 +513,10 @@ func _getfeedbackbyidMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _getinvitationcodeMw() []app.HandlerFunc {
+	return []app.HandlerFunc{
+		mw.Auth(),
+		mw.GetHeaderParams(),
+	}
+}

@@ -70,3 +70,15 @@ func GetLoginDataForYJSYRPC(ctx context.Context, req *user.GetLoginDataForYJSYRe
 	}
 	return resp.Id, resp.Cookies, nil
 }
+
+func GetInvitationCodeRpc(ctx context.Context, req *user.GetInvitationCodeRequest) (string, error) {
+	resp, err := userClient.GetInvitationCode(ctx, req)
+	if err != nil {
+		logger.Errorf("GetLoginDataRPC: RPC called failed: %v", err.Error())
+		return "", errno.InternalServiceError.WithError(err)
+	}
+	if !utils.IsSuccess(resp.Base) {
+		return "", errno.BizError.WithMessage("申请生成邀请码失败: " + resp.Base.Msg)
+	}
+	return resp.InvitationCode, nil
+}

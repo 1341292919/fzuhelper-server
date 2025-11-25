@@ -32,9 +32,16 @@ struct GetLoginDataForYJSYResponse{
     2: required string id
     3: required string cookies
 }
-
+struct GetInvitationCodeRequest{
+    1: optional bool isRefresh
+}
+struct GetInvitationCodeResponse{
+    1: required model.BaseResp base,
+    2: required string invitation_code,
+}
 service UserService {
     GetLoginDataResponse GetLoginData(1: GetLoginDataRequest req),
     GetUserInfoResponse GetUserInfo(1: GetUserInfoRequest request),
     GetLoginDataForYJSYResponse GetGetLoginDataForYJSY(1:GetLoginDataForYJSYRequest request),
+    GetInvitationCodeResponse GetInvitationCode(1:GetInvitationCodeRequest request),
 }
