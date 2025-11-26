@@ -113,12 +113,73 @@ func (s *UserServiceImpl) GetInvitationCode(ctx context.Context, request *user.G
 		return resp, nil
 	}
 	l := service.NewUserService(ctx, loginData.Id, utils.ParseCookies(loginData.Cookies), s.ClientSet)
-	code, err := l.GetInvitationCode(loginData.Id, request.GetIsRefresh())
+	code, err := l.GetInvitationCode(loginData.Id[len(loginData.Id)-9:], request.GetIsRefresh())
 	if err != nil {
 		resp.Base = base.BuildBaseResp(err)
 		return resp, nil
 	}
 	resp.Base = base.BuildSuccessResp()
 	resp.InvitationCode = code
+	return resp, err
+}
+
+// BindInvitation implements the UserServiceImpl interface.
+func (s *UserServiceImpl) BindInvitation(ctx context.Context, request *user.BindInvitationRequest) (
+	resp *user.BindInvitationResponse, err error,
+) {
+	resp = new(user.BindInvitationResponse)
+	loginData, err := metainfoContext.GetLoginData(ctx)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	l := service.NewUserService(ctx, loginData.Id, utils.ParseCookies(loginData.Cookies), s.ClientSet)
+	err = l.BindInvitation(loginData.Id[len(loginData.Id)-9:], request.InvitationCode)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	resp.Base = base.BuildSuccessResp()
+	return resp, err
+}
+
+// GetFriendList implements the UserServiceImpl interface.
+func (s *UserServiceImpl) GetFriendList(ctx context.Context, request *user.GetFriendListRequest) (
+	resp *user.GetFriendListResponse, err error,
+) {
+	resp = new(user.GetFriendListResponse)
+	loginData, err := metainfoContext.GetLoginData(ctx)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	l := service.NewUserService(ctx, loginData.Id, utils.ParseCookies(loginData.Cookies), s.ClientSet)
+	data, err := l.GetFriendList(loginData.Id[len(loginData.Id)-9:])
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	resp.Data = pack.BuildInfoListResp(data)
+	resp.Base = base.BuildSuccessResp()
+	return resp, err
+}
+
+// DeleteFriend implements the UserServiceImpl interface.
+func (s *UserServiceImpl) DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest) (
+	resp *user.DeleteFriendResponse, err error,
+) {
+	resp = new(user.DeleteFriendResponse)
+	loginData, err := metainfoContext.GetLoginData(ctx)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	l := service.NewUserService(ctx, loginData.Id, utils.ParseCookies(loginData.Cookies), s.ClientSet)
+	err = l.DeleteUserFriend(loginData, request.Id)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	resp.Base = base.BuildSuccessResp()
 	return resp, err
 }

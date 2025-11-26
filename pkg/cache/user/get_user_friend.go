@@ -28,3 +28,19 @@ func (c *CacheUser) GetInvitationCodeCache(ctx context.Context, key string) (cod
 	}
 	return value, nil
 }
+
+func (c *CacheUser) GetCodeStuIdMappingCache(ctx context.Context, key string) (stuId string, err error) {
+	value, err := c.client.Get(ctx, key).Result()
+	if err != nil {
+		return "", fmt.Errorf("dal.GetCodeStuIdMappingCache: GetStuIdCodeMapping cache failed: %w", err)
+	}
+	return value, nil
+}
+
+func (c *CacheUser) GetUserFriendCache(ctx context.Context, key string) (friendIds []string, err error) {
+	friendIds, err = c.client.SMembers(ctx, key).Result()
+	if err != nil {
+		return nil, fmt.Errorf("dal.GetCodeStuIdMappingCache: GetStuIdCodeMapping cache failed: %w", err)
+	}
+	return friendIds, nil
+}

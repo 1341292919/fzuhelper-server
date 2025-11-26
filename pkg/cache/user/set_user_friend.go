@@ -53,3 +53,38 @@ func (c *CacheUser) RemoveCodeStuIdMappingCache(ctx context.Context, key string)
 	}
 	return nil
 }
+
+func (c *CacheUser) SetUserFriendCache(ctx context.Context, stuId, friendId string) error {
+	if environment.IsTestEnvironment() {
+		return nil
+	}
+	pipe := c.client.Pipeline()
+	userFriendKey := fmt.Sprintf("user_friends:%v", stuId)
+	userFriendKey_ := fmt.Sprintf("user_friends:%v", friendId)
+	pipe.SAdd(ctx, userFriendKey, friendId)
+	pipe.SAdd(ctx, userFriendKey_, stuId)
+	pipe.Expire(ctx, userFriendKey, constants.UserFriendKeyExpire)
+	pipe.Expire(ctx, userFriendKey_, constants.UserFriendKeyExpire)
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("dal.SetInvitationCodeCache: Set cache failed: %w", err)
+	}
+	return nil
+}
+
+func (c *CacheUser) SetUserFriendListCache(ctx context.Context, stuId string, friendIds []string) error {
+	if environment.IsTestEnvironment() {
+		return nil
+	}
+	pipe := c.client.Pipeline()
+	userFriendKey := fmt.Sprintf("user_friends:%v", stuId)
+	for _, id := range friendIds {
+		pipe.SAdd(ctx, userFriendKey, id)
+	}
+	pipe.Expire(ctx, userFriendKey, constants.UserFriendKeyExpire)
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return fmt.Errorf("dal.SetUserFriendListCache: Set cache failed: %w", err)
+	}
+	return nil
+}

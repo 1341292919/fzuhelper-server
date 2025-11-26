@@ -301,3 +301,52 @@ func GetInvitationCode(ctx context.Context, c *app.RequestContext) {
 	resp.InvitationCode = code
 	pack.RespData(c, code)
 }
+
+// BindInvitation .
+// @router api/v1/user/friend/bind [GET]
+func BindInvitation(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req api.BindInvitationRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	err = rpc.BindInvitationRpc(ctx, &user.BindInvitationRequest{
+		InvitationCode: req.InvitationCode,
+	})
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	pack.RespSuccess(c)
+}
+
+// GetFriendList .
+// @router /api/v1/user/friend/info [GET]
+func GetFriendList(ctx context.Context, c *app.RequestContext) {
+	info, err := rpc.GetFriendListRpc(ctx, &user.GetFriendListRequest{})
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	pack.RespData(c, info)
+}
+
+// DeleteFriend .
+// @router api/v1/user/friend/delete [DELETE]
+func DeleteFriend(ctx context.Context, c *app.RequestContext) {
+	var err error
+	var req api.DeleteFriendRequest
+	err = c.BindAndValidate(&req)
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	err = rpc.DeleteFriendRpc(ctx, &user.DeleteFriendRequest{Id: req.ID})
+	if err != nil {
+		pack.RespError(c, err)
+		return
+	}
+	pack.RespSuccess(c)
+}

@@ -33,6 +33,9 @@ type Client interface {
 	GetUserInfo(ctx context.Context, request *user.GetUserInfoRequest, callOptions ...callopt.Option) (r *user.GetUserInfoResponse, err error)
 	GetGetLoginDataForYJSY(ctx context.Context, request *user.GetLoginDataForYJSYRequest, callOptions ...callopt.Option) (r *user.GetLoginDataForYJSYResponse, err error)
 	GetInvitationCode(ctx context.Context, request *user.GetInvitationCodeRequest, callOptions ...callopt.Option) (r *user.GetInvitationCodeResponse, err error)
+	BindInvitation(ctx context.Context, request *user.BindInvitationRequest, callOptions ...callopt.Option) (r *user.BindInvitationResponse, err error)
+	GetFriendList(ctx context.Context, request *user.GetFriendListRequest, callOptions ...callopt.Option) (r *user.GetFriendListResponse, err error)
+	DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest, callOptions ...callopt.Option) (r *user.DeleteFriendResponse, err error)
 }
 
 // NewClient creates a client for the service defined in IDL.
@@ -82,4 +85,19 @@ func (p *kUserServiceClient) GetGetLoginDataForYJSY(ctx context.Context, request
 func (p *kUserServiceClient) GetInvitationCode(ctx context.Context, request *user.GetInvitationCodeRequest, callOptions ...callopt.Option) (r *user.GetInvitationCodeResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
 	return p.kClient.GetInvitationCode(ctx, request)
+}
+
+func (p *kUserServiceClient) BindInvitation(ctx context.Context, request *user.BindInvitationRequest, callOptions ...callopt.Option) (r *user.BindInvitationResponse, err error) {
+	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
+	return p.kClient.BindInvitation(ctx, request)
+}
+
+func (p *kUserServiceClient) GetFriendList(ctx context.Context, request *user.GetFriendListRequest, callOptions ...callopt.Option) (r *user.GetFriendListResponse, err error) {
+	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
+	return p.kClient.GetFriendList(ctx, request)
+}
+
+func (p *kUserServiceClient) DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest, callOptions ...callopt.Option) (r *user.DeleteFriendResponse, err error) {
+	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
+	return p.kClient.DeleteFriend(ctx, request)
 }

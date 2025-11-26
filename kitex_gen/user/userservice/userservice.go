@@ -59,6 +59,27 @@ var serviceMethods = map[string]kitex.MethodInfo{
 		false,
 		kitex.WithStreamingMode(kitex.StreamingNone),
 	),
+	"BindInvitation": kitex.NewMethodInfo(
+		bindInvitationHandler,
+		newUserServiceBindInvitationArgs,
+		newUserServiceBindInvitationResult,
+		false,
+		kitex.WithStreamingMode(kitex.StreamingNone),
+	),
+	"GetFriendList": kitex.NewMethodInfo(
+		getFriendListHandler,
+		newUserServiceGetFriendListArgs,
+		newUserServiceGetFriendListResult,
+		false,
+		kitex.WithStreamingMode(kitex.StreamingNone),
+	),
+	"DeleteFriend": kitex.NewMethodInfo(
+		deleteFriendHandler,
+		newUserServiceDeleteFriendArgs,
+		newUserServiceDeleteFriendResult,
+		false,
+		kitex.WithStreamingMode(kitex.StreamingNone),
+	),
 }
 
 var (
@@ -197,6 +218,60 @@ func newUserServiceGetInvitationCodeResult() interface{} {
 	return user.NewUserServiceGetInvitationCodeResult()
 }
 
+func bindInvitationHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
+	realArg := arg.(*user.UserServiceBindInvitationArgs)
+	realResult := result.(*user.UserServiceBindInvitationResult)
+	success, err := handler.(user.UserService).BindInvitation(ctx, realArg.Request)
+	if err != nil {
+		return err
+	}
+	realResult.Success = success
+	return nil
+}
+func newUserServiceBindInvitationArgs() interface{} {
+	return user.NewUserServiceBindInvitationArgs()
+}
+
+func newUserServiceBindInvitationResult() interface{} {
+	return user.NewUserServiceBindInvitationResult()
+}
+
+func getFriendListHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
+	realArg := arg.(*user.UserServiceGetFriendListArgs)
+	realResult := result.(*user.UserServiceGetFriendListResult)
+	success, err := handler.(user.UserService).GetFriendList(ctx, realArg.Request)
+	if err != nil {
+		return err
+	}
+	realResult.Success = success
+	return nil
+}
+func newUserServiceGetFriendListArgs() interface{} {
+	return user.NewUserServiceGetFriendListArgs()
+}
+
+func newUserServiceGetFriendListResult() interface{} {
+	return user.NewUserServiceGetFriendListResult()
+}
+
+func deleteFriendHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
+	realArg := arg.(*user.UserServiceDeleteFriendArgs)
+	realResult := result.(*user.UserServiceDeleteFriendResult)
+	success, err := handler.(user.UserService).DeleteFriend(ctx, realArg.Request)
+	if err != nil {
+		return err
+	}
+	realResult.Success = success
+	return nil
+}
+func newUserServiceDeleteFriendArgs() interface{} {
+	return user.NewUserServiceDeleteFriendArgs()
+}
+
+func newUserServiceDeleteFriendResult() interface{} {
+	return user.NewUserServiceDeleteFriendResult()
+}
+
 type kClient struct {
 	c client.Client
 }
@@ -242,6 +317,36 @@ func (p *kClient) GetInvitationCode(ctx context.Context, request *user.GetInvita
 	_args.Request = request
 	var _result user.UserServiceGetInvitationCodeResult
 	if err = p.c.Call(ctx, "GetInvitationCode", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+
+func (p *kClient) BindInvitation(ctx context.Context, request *user.BindInvitationRequest) (r *user.BindInvitationResponse, err error) {
+	var _args user.UserServiceBindInvitationArgs
+	_args.Request = request
+	var _result user.UserServiceBindInvitationResult
+	if err = p.c.Call(ctx, "BindInvitation", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+
+func (p *kClient) GetFriendList(ctx context.Context, request *user.GetFriendListRequest) (r *user.GetFriendListResponse, err error) {
+	var _args user.UserServiceGetFriendListArgs
+	_args.Request = request
+	var _result user.UserServiceGetFriendListResult
+	if err = p.c.Call(ctx, "GetFriendList", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+
+func (p *kClient) DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest) (r *user.DeleteFriendResponse, err error) {
+	var _args user.UserServiceDeleteFriendArgs
+	_args.Request = request
+	var _result user.UserServiceDeleteFriendResult
+	if err = p.c.Call(ctx, "DeleteFriend", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil

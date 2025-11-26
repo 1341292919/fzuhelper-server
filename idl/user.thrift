@@ -39,9 +39,32 @@ struct GetInvitationCodeResponse{
     1: required model.BaseResp base,
     2: required string invitation_code,
 }
+struct BindInvitationRequest{
+        1: required string invitation_code
+}
+struct BindInvitationResponse{
+        1: required model.BaseResp base,
+}
+struct GetFriendListRequest{
+
+}
+struct GetFriendListResponse{
+    1: required model.BaseResp base,
+    2: optional list<model.UserInfo> data
+}
+struct DeleteFriendRequest{
+    1:required string id
+}
+struct DeleteFriendResponse{
+         1: required model.BaseResp base,
+}
+
 service UserService {
     GetLoginDataResponse GetLoginData(1: GetLoginDataRequest req),
     GetUserInfoResponse GetUserInfo(1: GetUserInfoRequest request),
     GetLoginDataForYJSYResponse GetGetLoginDataForYJSY(1:GetLoginDataForYJSYRequest request),
     GetInvitationCodeResponse GetInvitationCode(1:GetInvitationCodeRequest request),
+    BindInvitationResponse BindInvitation(1:BindInvitationRequest request),
+    GetFriendListResponse GetFriendList(1:GetFriendListRequest request),
+    DeleteFriendResponse DeleteFriend(1:DeleteFriendRequest request)
 }
