@@ -19,6 +19,7 @@ package service
 import (
 	"fmt"
 
+	"github.com/west2-online/fzuhelper-server/config"
 	"github.com/west2-online/fzuhelper-server/pkg/logger"
 )
 
@@ -43,6 +44,22 @@ func (s *UserService) BindInvitation(stuId, code string) error {
 	if ok {
 		return fmt.Errorf("service.BindInvitation: RelationShip Already Exist")
 	}
+	// 好友列表限制
+	confine, err := s.IsFriendNumsConfined(stuId)
+	if err != nil {
+		return err
+	}
+	if confine {
+		return fmt.Errorf("service.BindInvitation :%v friendList is full", stuId)
+	}
+	targetConfine, err := s.IsFriendNumsConfined(friendId)
+	if err != nil {
+		return err
+	}
+	if targetConfine {
+		return fmt.Errorf("service.BindInvitation :%v friendList is full", friendId)
+	}
+
 	err = s.db.User.CreateRelation(s.ctx, stuId, friendId)
 	if err != nil {
 		return fmt.Errorf("service.CreateRelation: %w", err)
@@ -53,6 +70,34 @@ func (s *UserService) BindInvitation(stuId, code string) error {
 		if err != nil {
 			logger.Errorf("service. SetUserFriendCache: %v", err)
 		}
+		err = s.cache.User.RemoveCodeStuIdMappingCache(s.ctx, mapKey) // 如果邀请码设为一次性
+		if err != nil {
+			logger.Errorf("service. RemoveCodeStuIdMappingCache: %v", err)
+		}
 	}()
 	return nil
+}
+
+func (s *UserService) IsFriendNumsConfined(stuId string) (bool, error) {
+	userFriendKey := fmt.Sprintf("user_friends:%v", stuId)
+	exist := s.cache.IsKeyExist(s.ctx, userFriendKey)
+	if exist {
+		friends, err := s.cache.User.GetUserFriendCache(s.ctx, userFriendKey)
+		if err != nil {
+			return false, fmt.Errorf("service.IsFriendNumsConfined get user friend cache: %w", err)
+		}
+		if int64(len(friends)) >= config.Friend.MaxNum {
+			return true, nil
+		}
+		return false, nil
+	} else {
+		length, err := s.db.User.GetUserFriendListLength(s.ctx, stuId)
+		if err != nil {
+			return false, fmt.Errorf("service.IsFriendNumsConfined get user friend length db: %w", err)
+		}
+		if length >= config.Friend.MaxNum {
+			return true, nil
+		}
+		return false, nil
+	}
 }

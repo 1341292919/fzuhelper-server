@@ -54,3 +54,16 @@ func (c *DBUser) GetUserFriendsId(ctx context.Context, stuId string) (friendsId 
 	}
 	return friendsId, err
 }
+
+func (c *DBUser) GetUserFriendListLength(ctx context.Context, stuId string) (length int64, err error) {
+	err = c.client.WithContext(ctx).
+		Table(constants.UserRelationTableName).
+		Where("follower_id = ? and status = ?", stuId, constants.RelationOKStatus).
+		Count(&length).
+		Error
+	if err != nil {
+		logger.Errorf("dal.GetUserFriendListLength error: %v", err)
+		return -1, errno.Errorf(errno.InternalDatabaseErrorCode, "dal.GetUserFriendListLength error: %v", err)
+	}
+	return length, nil
+}

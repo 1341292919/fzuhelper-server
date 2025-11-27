@@ -18,6 +18,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/bytedance/mockey"
@@ -30,7 +31,6 @@ import (
 	"github.com/west2-online/fzuhelper-server/pkg/db"
 	dbmodel "github.com/west2-online/fzuhelper-server/pkg/db/model"
 	userDB "github.com/west2-online/fzuhelper-server/pkg/db/user"
-	"github.com/west2-online/fzuhelper-server/pkg/errno"
 	"github.com/west2-online/fzuhelper-server/pkg/utils"
 )
 
@@ -41,13 +41,16 @@ func TestUserService_BindInvitation(t *testing.T) {
 		expectingError    bool
 		expectingErrorMsg string
 
-		cacheExist      bool
-		cacheGetError   error
-		cacheFriendId   string
-		dbRelationExist bool
-		dbRelationError error
-		dbCreateError   error
-		cacheSetError   error
+		cacheExist        bool
+		cacheGetError     error
+		cacheFriendId     string
+		dbRelationExist   bool
+		dbRelationError   error
+		dbCreateError     error
+		userConfined      bool
+		targetConfined    bool
+		userConfinedError error
+		targetConfinedErr error
 	}
 	stuId := "102300217"
 	friendId := "102300218"
@@ -65,14 +68,14 @@ func TestUserService_BindInvitation(t *testing.T) {
 			expectingError:    true,
 			expectingErrorMsg: "service.GetCodeStuIdMappingCode:",
 			cacheExist:        true,
-			cacheGetError:     errno.InternalServiceError,
+			cacheGetError:     fmt.Errorf("internal service error"),
 		},
 		{
 			name:              "add self as friend",
 			expectingError:    true,
 			expectingErrorMsg: "service.BindInvitation: cannot add yourself as friend",
 			cacheExist:        true,
-			cacheFriendId:     stuId, // 返回自己的学号
+			cacheFriendId:     stuId,
 		},
 		{
 			name:              "relation already exist",
@@ -93,6 +96,36 @@ func TestUserService_BindInvitation(t *testing.T) {
 			dbRelationError:   gorm.ErrInvalidData,
 		},
 		{
+			name:              "user friend list full",
+			expectingError:    true,
+			expectingErrorMsg: "service.BindInvitation :102300217 friendList is full",
+			cacheExist:        true,
+			cacheFriendId:     friendId,
+			dbRelationExist:   false,
+			dbRelationError:   nil,
+			userConfined:      true,
+		},
+		{
+			name:              "target friend list full",
+			expectingError:    true,
+			expectingErrorMsg: "service.BindInvitation :102300218 friendList is full",
+			cacheExist:        true,
+			cacheFriendId:     friendId,
+			dbRelationExist:   false,
+			dbRelationError:   nil,
+			targetConfined:    true,
+		},
+		{
+			name:              "user confined check error",
+			expectingError:    true,
+			expectingErrorMsg: "service.IsFriendNumsConfined get user friend cache:",
+			cacheExist:        true,
+			cacheFriendId:     friendId,
+			dbRelationExist:   false,
+			dbRelationError:   nil,
+			userConfinedError: fmt.Errorf("service.IsFriendNumsConfined get user friend cache: cache error"),
+		},
+		{
 			name:              "db create error",
 			expectingError:    true,
 			expectingErrorMsg: "service.CreateRelation:",
@@ -110,17 +143,6 @@ func TestUserService_BindInvitation(t *testing.T) {
 			dbRelationExist: false,
 			dbRelationError: nil,
 			dbCreateError:   nil,
-			cacheSetError:   nil,
-		},
-		{
-			name:            "success with cache set error",
-			expectingError:  false,
-			cacheExist:      true,
-			cacheFriendId:   friendId,
-			dbRelationExist: false,
-			dbRelationError: nil,
-			dbCreateError:   nil,
-			cacheSetError:   errno.InternalServiceError,
 		},
 	}
 
@@ -136,6 +158,7 @@ func TestUserService_BindInvitation(t *testing.T) {
 				mockClientSet.CacheClient.User = &user.CacheUser{}
 				userService := NewUserService(context.Background(), "", nil, mockClientSet)
 
+				// Mock 缓存检查
 				mockey.Mock((*cache.Cache).IsKeyExist).To(func(ctx context.Context, key string) bool {
 					return tc.cacheExist
 				}).Build()
@@ -151,12 +174,24 @@ func TestUserService_BindInvitation(t *testing.T) {
 					return tc.dbRelationExist, nil, tc.dbRelationError
 				}).Build()
 
+				// Mock 好友数量检查
+				mockey.Mock((*UserService).IsFriendNumsConfined).To(func(s *UserService, stuId string) (bool, error) {
+					if stuId == "102300217" {
+						return tc.userConfined, tc.userConfinedError
+					}
+					return tc.targetConfined, tc.targetConfinedErr
+				}).Build()
+
 				mockey.Mock((*userDB.DBUser).CreateRelation).To(func(ctx context.Context, stuId, friendId string) error {
 					return tc.dbCreateError
 				}).Build()
 
 				mockey.Mock((*user.CacheUser).SetUserFriendCache).To(func(ctx context.Context, stuId, friendId string) error {
-					return tc.cacheSetError
+					return nil
+				}).Build()
+
+				mockey.Mock((*user.CacheUser).RemoveCodeStuIdMappingCache).To(func(ctx context.Context, key string) error {
+					return nil
 				}).Build()
 
 				err := userService.BindInvitation(stuId, code)
