@@ -542,3 +542,10 @@ func _deletefriendMw() []app.HandlerFunc {
 	// your code...
 	return nil
 }
+
+func _getfriendcourseMw() []app.HandlerFunc {
+	return []app.HandlerFunc{
+		mw.Auth(),
+		mw.GetHeaderParams(),
+	}
+}

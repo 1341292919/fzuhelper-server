@@ -18,7 +18,10 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
+
+	"github.com/redis/go-redis/v9"
 )
 
 func (c *CacheUser) GetInvitationCodeCache(ctx context.Context, key string) (code string, err error) {
@@ -43,4 +46,16 @@ func (c *CacheUser) GetUserFriendCache(ctx context.Context, key string) (friendI
 		return nil, fmt.Errorf("dal.GetCodeStuIdMappingCache: GetStuIdCodeMapping cache failed: %w", err)
 	}
 	return friendIds, nil
+}
+
+func (c *CacheUser) IsFriendCache(ctx context.Context, stuId, friendId string) (bool, error) {
+	userFriendKey := fmt.Sprintf("user_friends:%v", stuId)
+	exists, err := c.client.SIsMember(ctx, userFriendKey, friendId).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return false, nil
+		}
+		return false, fmt.Errorf("IsFriendCache: check failed: %w", err)
+	}
+	return exists, nil
 }

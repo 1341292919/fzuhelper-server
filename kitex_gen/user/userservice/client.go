@@ -36,6 +36,7 @@ type Client interface {
 	BindInvitation(ctx context.Context, request *user.BindInvitationRequest, callOptions ...callopt.Option) (r *user.BindInvitationResponse, err error)
 	GetFriendList(ctx context.Context, request *user.GetFriendListRequest, callOptions ...callopt.Option) (r *user.GetFriendListResponse, err error)
 	DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest, callOptions ...callopt.Option) (r *user.DeleteFriendResponse, err error)
+	VerifyFriend(ctx context.Context, request *user.VerifyFriendRequest, callOptions ...callopt.Option) (r *user.VerifyFriendResponse, err error)
 }
 
 // NewClient creates a client for the service defined in IDL.
@@ -100,4 +101,9 @@ func (p *kUserServiceClient) GetFriendList(ctx context.Context, request *user.Ge
 func (p *kUserServiceClient) DeleteFriend(ctx context.Context, request *user.DeleteFriendRequest, callOptions ...callopt.Option) (r *user.DeleteFriendResponse, err error) {
 	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
 	return p.kClient.DeleteFriend(ctx, request)
+}
+
+func (p *kUserServiceClient) VerifyFriend(ctx context.Context, request *user.VerifyFriendRequest, callOptions ...callopt.Option) (r *user.VerifyFriendResponse, err error) {
+	ctx = client.NewCtxWithCallOptions(ctx, callOptions)
+	return p.kClient.VerifyFriend(ctx, request)
 }

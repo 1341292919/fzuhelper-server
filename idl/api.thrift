@@ -192,6 +192,16 @@ struct GetLocateDateResponse{
     1: optional model.LocateDate locateDate
 }
 
+struct GetFriendCourseRequest {
+    1: required string term
+    2: required string id
+}
+
+struct GetFriendCourseResponse {
+    1: required model.BaseResp base
+    2: required list<model.Course> data
+}
+
 service CourseService {
     // 获取课表
     CourseListResponse GetCourseList(1: CourseListRequest req)(api.get="/api/v1/jwch/course/list")
@@ -202,9 +212,10 @@ service CourseService {
 
     // 由手机端的日历 app 直接发起的请求，无双 token 保护（即 url "/jwch" 前缀）
     SubscribeCalendarResponse SubscribeCalendar(1: SubscribeCalendarRequest req)(api.get="/api/v1/course/calendar/subscribe")
-
     // 获取当前周数、学期、学年
     GetLocateDateResponse GetLocateDate(1:GetLocateDateRequest req)(api.get="/api/v1/course/date")
+    // 获取好友课表
+    GetFriendCourseResponse GetFriendCourse(1:GetFriendCourseRequest req)(api.get="/api/v1/course/friend")
 }
 
 ## ----------------------------------------------------------------------------

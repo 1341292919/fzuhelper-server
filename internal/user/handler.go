@@ -183,3 +183,17 @@ func (s *UserServiceImpl) DeleteFriend(ctx context.Context, request *user.Delete
 	resp.Base = base.BuildSuccessResp()
 	return resp, err
 }
+
+func (s *UserServiceImpl) VerifyFriend(ctx context.Context, request *user.VerifyFriendRequest) (
+	resp *user.VerifyFriendResponse, err error,
+) {
+	resp = new(user.VerifyFriendResponse)
+	res, err := service.NewUserService(ctx, "", nil, s.ClientSet).VerifyUserFriend(request.Id, request.FriendId)
+	if err != nil {
+		resp.Base = base.BuildBaseResp(err)
+		return resp, nil
+	}
+	resp.FriendExist = res
+	resp.Base = base.BuildSuccessResp()
+	return resp, err
+}

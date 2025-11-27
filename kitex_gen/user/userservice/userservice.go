@@ -80,6 +80,13 @@ var serviceMethods = map[string]kitex.MethodInfo{
 		false,
 		kitex.WithStreamingMode(kitex.StreamingNone),
 	),
+	"VerifyFriend": kitex.NewMethodInfo(
+		verifyFriendHandler,
+		newUserServiceVerifyFriendArgs,
+		newUserServiceVerifyFriendResult,
+		false,
+		kitex.WithStreamingMode(kitex.StreamingNone),
+	),
 }
 
 var (
@@ -272,6 +279,24 @@ func newUserServiceDeleteFriendResult() interface{} {
 	return user.NewUserServiceDeleteFriendResult()
 }
 
+func verifyFriendHandler(ctx context.Context, handler interface{}, arg, result interface{}) error {
+	realArg := arg.(*user.UserServiceVerifyFriendArgs)
+	realResult := result.(*user.UserServiceVerifyFriendResult)
+	success, err := handler.(user.UserService).VerifyFriend(ctx, realArg.Request)
+	if err != nil {
+		return err
+	}
+	realResult.Success = success
+	return nil
+}
+func newUserServiceVerifyFriendArgs() interface{} {
+	return user.NewUserServiceVerifyFriendArgs()
+}
+
+func newUserServiceVerifyFriendResult() interface{} {
+	return user.NewUserServiceVerifyFriendResult()
+}
+
 type kClient struct {
 	c client.Client
 }
@@ -347,6 +372,16 @@ func (p *kClient) DeleteFriend(ctx context.Context, request *user.DeleteFriendRe
 	_args.Request = request
 	var _result user.UserServiceDeleteFriendResult
 	if err = p.c.Call(ctx, "DeleteFriend", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
+}
+
+func (p *kClient) VerifyFriend(ctx context.Context, request *user.VerifyFriendRequest) (r *user.VerifyFriendResponse, err error) {
+	var _args user.UserServiceVerifyFriendArgs
+	_args.Request = request
+	var _result user.UserServiceVerifyFriendResult
+	if err = p.c.Call(ctx, "VerifyFriend", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil
