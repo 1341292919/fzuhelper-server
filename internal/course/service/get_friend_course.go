@@ -67,11 +67,11 @@ func (s *CourseService) GetFriendCourse(req *course.GetFriendCourseRequest, logi
 		为防止因此导致term无效。下面做了一个映射的操作
 	*/
 	if !slices.Contains(terms, req.Term) {
-		if pack.IsYjsjTerm(req.Term) {
-			if !slices.Contains(terms, pack.MapYjsjTerm(req.Term)) {
+		if pack.IsYjsyTerm(req.Term) {
+			if !slices.Contains(terms, pack.MapYjsyTerm(req.Term)) {
 				return nil, errors.New("service.GetFriendCourse: Invalid term")
 			}
-			reqTerm = pack.MapYjsjTerm(req.Term)
+			reqTerm = pack.MapYjsyTerm(req.Term)
 		}
 		if pack.IsJwchTerm(req.Term) {
 			if !slices.Contains(terms, pack.MapJwchTerm(req.Term)) {

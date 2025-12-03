@@ -144,7 +144,7 @@ func GetTop2TermLists(termList []string) []string {
 	return t
 }
 
-func IsYjsjTerm(term string) bool {
+func IsYjsyTerm(term string) bool {
 	return len(term) == 11 && term[4] == '-' && term[9] == '-'
 }
 
@@ -161,7 +161,7 @@ func MapJwchTerm(term string) string {
 	return fmt.Sprintf("%d-%d-%s", prevYear, currentYear, semester)
 }
 
-func MapYjsjTerm(term string) string {
+func MapYjsyTerm(term string) string {
 	// 2024-2025-1 → 202501
 	return term[5:9] + "0" + term[10:11]
 }
