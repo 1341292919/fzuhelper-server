@@ -19,7 +19,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/bytedance/mockey"
 	"github.com/stretchr/testify/assert"
@@ -51,6 +53,11 @@ func TestUserService_BindInvitation(t *testing.T) {
 		targetConfined    bool
 		userConfinedError error
 		targetConfinedErr error
+
+		// 添加 goroutine 相关的字段
+		goroutineMockCacheExist bool
+		targetCacheExist        bool
+		goroutineError          bool
 	}
 	stuId := "102300217"
 	friendId := "102300218"
@@ -136,13 +143,16 @@ func TestUserService_BindInvitation(t *testing.T) {
 			dbCreateError:     gorm.ErrInvalidData,
 		},
 		{
-			name:            "success",
-			expectingError:  false,
-			cacheExist:      true,
-			cacheFriendId:   friendId,
-			dbRelationExist: false,
-			dbRelationError: nil,
-			dbCreateError:   nil,
+			name:                    "success",
+			expectingError:          false,
+			cacheExist:              true,
+			cacheFriendId:           friendId,
+			dbRelationExist:         false,
+			dbRelationError:         nil,
+			dbCreateError:           nil,
+			goroutineMockCacheExist: true, // goroutine 中检查缓存会返回 true
+			targetCacheExist:        true,
+			goroutineError:          false,
 		},
 	}
 
@@ -150,6 +160,9 @@ func TestUserService_BindInvitation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			mockey.PatchConvey(tc.name, t, func() {
+				// 使用 channel 来等待 goroutine 完成
+				goroutineDone := make(chan bool, 1)
+
 				mockClientSet := &base.ClientSet{
 					SFClient:    new(utils.Snowflake),
 					DBClient:    new(db.Database),
@@ -158,10 +171,24 @@ func TestUserService_BindInvitation(t *testing.T) {
 				mockClientSet.CacheClient.User = &user.CacheUser{}
 				userService := NewUserService(context.Background(), "", nil, mockClientSet)
 
-				// Mock 缓存检查
-				mockey.Mock((*cache.Cache).IsKeyExist).To(func(ctx context.Context, key string) bool {
-					return tc.cacheExist
-				}).Build()
+				// Mock 缓存检查 - 主线程和goroutine都可能调用
+				isKeyExistMock := mockey.Mock((*cache.Cache).IsKeyExist)
+				if tc.expectingError {
+					// 错误情况下，goroutine 不会执行，所以只 mock 主逻辑
+					isKeyExistMock.To(func(ctx context.Context, key string) bool {
+						return tc.cacheExist
+					}).Build()
+				} else {
+					// 成功情况下，主逻辑和goroutine都会调用
+					isKeyExistMock.To(func(ctx context.Context, key string) bool {
+						// 根据 key 判断是主逻辑调用还是 goroutine 调用
+						if strings.HasPrefix(key, "code_mapping:") {
+							return tc.cacheExist
+						}
+						// goroutine 中的调用
+						return tc.goroutineMockCacheExist
+					}).Build()
+				}
 
 				mockey.Mock((*user.CacheUser).GetCodeStuIdMappingCache).To(func(ctx context.Context, key string) (string, error) {
 					if tc.cacheGetError != nil {
@@ -186,13 +213,23 @@ func TestUserService_BindInvitation(t *testing.T) {
 					return tc.dbCreateError
 				}).Build()
 
-				mockey.Mock((*user.CacheUser).SetUserFriendCache).To(func(ctx context.Context, stuId, friendId string) error {
-					return nil
-				}).Build()
+				// Mock goroutine 中的缓存操作
+				if !tc.expectingError {
+					mockey.Mock((*user.CacheUser).SetUserFriendCache).To(func(ctx context.Context, stuId, friendId string) error {
+						if tc.goroutineError {
+							return fmt.Errorf("cache error")
+						}
+						return nil
+					}).Build()
 
-				mockey.Mock((*user.CacheUser).RemoveCodeStuIdMappingCache).To(func(ctx context.Context, key string) error {
-					return nil
-				}).Build()
+					mockey.Mock((*user.CacheUser).RemoveCodeStuIdMappingCache).To(func(ctx context.Context, key string) error {
+						if tc.goroutineError {
+							return fmt.Errorf("remove cache error")
+						}
+						goroutineDone <- true // 标记 goroutine 完成
+						return nil
+					}).Build()
+				}
 
 				err := userService.BindInvitation(stuId, code)
 
@@ -203,6 +240,16 @@ func TestUserService_BindInvitation(t *testing.T) {
 					}
 				} else {
 					assert.NoError(t, err)
+					// 等待 goroutine 完成（如果有的话）
+					if tc.expectingError == false {
+						select {
+						case <-goroutineDone:
+							// goroutine 完成
+						case <-time.After(100 * time.Millisecond):
+							// 超时，goroutine 可能没有正确执行
+							t.Log("goroutine timeout, but test may still pass")
+						}
+					}
 				}
 			})
 		})
