@@ -18,8 +18,8 @@ package service
 
 import (
 	"fmt"
-	"github.com/west2-online/fzuhelper-server/pkg/base/environment"
 
+	"github.com/west2-online/fzuhelper-server/pkg/base/environment"
 	db "github.com/west2-online/fzuhelper-server/pkg/db/model"
 	"github.com/west2-online/fzuhelper-server/pkg/logger"
 )
