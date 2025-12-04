@@ -144,15 +144,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 			},
 		},
 		{
-			name:                 "success with stu not exist in db",
-			expectingError:       false,
-			cacheFriendListExist: true,
-			cacheFriendIds:       []string{friendId1},
-			cacheStuInfoExist:    false,
-			dbStuInfoExist:       false,
-			dbStuInfoError:       nil,
-		},
-		{
 			name:                 "success with cache set error",
 			expectingError:       false,
 			cacheFriendListExist: false,

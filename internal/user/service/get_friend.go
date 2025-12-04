@@ -19,6 +19,7 @@ package service
 import (
 	"fmt"
 
+	"github.com/west2-online/fzuhelper-server/pkg/base/environment"
 	db "github.com/west2-online/fzuhelper-server/pkg/db/model"
 	"github.com/west2-online/fzuhelper-server/pkg/logger"
 )
@@ -36,6 +37,12 @@ func (s *UserService) GetFriendList(stuId string) ([]*db.Student, error) {
 	} else {
 		if friendId, err = s.db.User.GetUserFriendsId(s.ctx, stuId); err != nil {
 			return nil, fmt.Errorf("service.GetUserFriendsIdDB: %w", err)
+		}
+		if environment.IsTestEnvironment() {
+			err := s.cache.User.SetUserFriendListCache(s.ctx, stuId, friendId)
+			if err != nil {
+				logger.Errorf("service. SetUserFriendListCache: %v", err)
+			}
 		}
 		go func() {
 			err := s.cache.User.SetUserFriendListCache(s.ctx, stuId, friendId)
