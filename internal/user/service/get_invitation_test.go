@@ -93,12 +93,14 @@ func TestUserService_GetInvitationCode(t *testing.T) {
 		},
 	}
 	defer mockey.UnPatchAll()
+	mockey.Mock((*user.CacheUser).SetInvitationCodeCache).Return(nil).Build()
+	mockey.Mock((*user.CacheUser).SetCodeStuIdMappingCache).Return(nil).Build()
+	mockey.Mock((*user.CacheUser).RemoveCodeStuIdMappingCache).Return(nil).Build()
 	for _, tc := range testCases {
 		mockey.PatchConvey(tc.name, t, func() {
 			mockClientSet := &base.ClientSet{
-				SFClient:    new(utils.Snowflake),
-				DBClient:    new(db.Database),
-				CacheClient: new(cache.Cache),
+				DBClient:    &db.Database{},
+				CacheClient: &cache.Cache{},
 			}
 			mockClientSet.CacheClient.User = &user.CacheUser{}
 			userService := NewUserService(context.Background(), "", nil, mockClientSet)
@@ -113,10 +115,6 @@ func TestUserService_GetInvitationCode(t *testing.T) {
 				}
 				return tc.cacheCode, nil
 			}).Build()
-
-			mockey.Mock((*user.CacheUser).SetInvitationCodeCache).Return(nil).Build()
-			mockey.Mock((*user.CacheUser).SetCodeStuIdMappingCache).Return(nil).Build()
-			mockey.Mock((*user.CacheUser).RemoveCodeStuIdMappingCache).Return(nil).Build()
 
 			if !tc.cacheExist || tc.IsRefresh {
 				mockey.Mock(utils.GenerateRandomCode).Return("ABCDEF").Build()

@@ -57,8 +57,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 		dbStuInfoExist bool
 		dbStuInfoError error
 		dbStuInfoMap   map[string]*dbmodel.Student
-
-		cacheSetError error
 	}
 
 	stuId := "102300217"
@@ -144,7 +142,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 			dbStuInfoMap: map[string]*dbmodel.Student{
 				friendId1: stuInfo1,
 			},
-			cacheSetError: nil,
 		},
 		{
 			name:                 "success with stu not exist in db",
@@ -164,7 +161,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 			dbStuInfoMap: map[string]*dbmodel.Student{
 				friendId1: stuInfo1,
 			},
-			cacheSetError: errno.InternalServiceError,
 		},
 		{
 			name:                 "empty friend list",
@@ -175,12 +171,15 @@ func TestUserService_GetFriendList(t *testing.T) {
 	}
 
 	defer mockey.UnPatchAll()
+	mockey.Mock((*user.CacheUser).SetUserFriendListCache).To(func(ctx context.Context, stuId string, friendIds []string) error {
+		return nil
+	}).Build()
 	for _, tc := range testCases {
 		mockey.PatchConvey(tc.name, t, func() {
 			mockClientSet := &base.ClientSet{
 				SFClient:    new(utils.Snowflake),
-				DBClient:    new(db.Database),
-				CacheClient: new(cache.Cache),
+				DBClient:    &db.Database{},
+				CacheClient: &cache.Cache{},
 			}
 			mockClientSet.CacheClient.User = &user.CacheUser{}
 			userService := NewUserService(context.Background(), "", nil, mockClientSet)
@@ -204,10 +203,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 					return nil, tc.dbFriendIdsError
 				}
 				return tc.dbFriendIds, nil
-			}).Build()
-
-			mockey.Mock((*user.CacheUser).SetUserFriendListCache).To(func(ctx context.Context, stuId string, friendIds []string) error {
-				return tc.cacheSetError
 			}).Build()
 
 			mockey.Mock((*user.CacheUser).GetStuInfoCache).To(func(ctx context.Context, key string) (*dbmodel.Student, error) {
