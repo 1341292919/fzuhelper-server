@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/bytedance/mockey"
 	"github.com/stretchr/testify/assert"
@@ -259,5 +260,6 @@ func TestUserService_GetFriendList(t *testing.T) {
 				assert.Equal(t, expectedIds, actualIds, "friend list stuIds should match")
 			}
 		})
+		time.Sleep(500 * time.Millisecond)
 	}
 }

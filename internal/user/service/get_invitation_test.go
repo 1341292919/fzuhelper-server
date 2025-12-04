@@ -19,6 +19,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/bytedance/mockey"
 	"github.com/stretchr/testify/assert"
@@ -139,5 +140,6 @@ func TestUserService_GetInvitationCode(t *testing.T) {
 				}
 			}
 		})
+		time.Sleep(500 * time.Millisecond)
 	}
 }

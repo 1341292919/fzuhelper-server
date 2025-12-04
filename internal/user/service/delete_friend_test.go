@@ -19,6 +19,7 @@ package service
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/bytedance/mockey"
 	"github.com/stretchr/testify/assert"
@@ -123,5 +124,6 @@ func TestUserService_DeleteUserFriend(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
+		time.Sleep(500 * time.Millisecond)
 	}
 }
