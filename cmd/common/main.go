@@ -32,6 +32,7 @@ import (
 	"github.com/west2-online/fzuhelper-server/config"
 	"github.com/west2-online/fzuhelper-server/internal/common"
 	"github.com/west2-online/fzuhelper-server/internal/common/pack"
+	commonSvc "github.com/west2-online/fzuhelper-server/internal/common/service"
 	"github.com/west2-online/fzuhelper-server/kitex_gen/common/commonservice"
 	"github.com/west2-online/fzuhelper-server/pkg/base"
 	baseserver "github.com/west2-online/fzuhelper-server/pkg/base/server"
@@ -77,15 +78,33 @@ func loadNotice(db *db.Database) {
 		}
 		for _, row := range content {
 			ctx := context.Background()
+
+			ok, err := db.Notice.IsNoticeExists(ctx, row.Title, row.URL)
+			if err != nil {
+				logger.Warnf("syncer init: failed to check notice exists in page %d: %v", i, err)
+				continue
+			}
+			// 数据库已存在，无需处理
+			if ok {
+				continue
+			}
+
 			info := &model.Notice{
 				Title:       row.Title,
 				PublishedAt: row.Date,
 				URL:         row.URL,
 			}
-			err = db.Notice.CreateNotice(ctx, info)
-			if err != nil {
+			if err = db.Notice.CreateNotice(ctx, info); err != nil {
 				logger.Warnf("syncer init: failed to create notice in page %d: %v", i, err)
+				continue
 			}
+
+			go func(notice *jwch.NoticeInfo) {
+				ctx := context.Background()
+				if err := commonSvc.NewCommonService(ctx, clientSet, taskQueue).ProcessAutoAdjustCourseNotice(notice); err != nil {
+					logger.Errorf("syncer init: ProcessAutoAdjustCourseNotice failed, title=%s url=%s err=%v", notice.Title, notice.URL, err)
+				}
+			}(row)
 		}
 	}
 	logger.Infof("syncer init: notice syncer init success")
@@ -106,7 +125,7 @@ func main() {
 	}
 
 	svr := commonservice.NewServer(
-		common.NewCommonService(clientSet),
+		common.NewCommonService(clientSet, taskQueue),
 		baseserver.AssembleCommonServerConfig(serviceName, addr, r)...,
 	)
 	server.RegisterShutdownHook(clientSet.Close)
@@ -152,6 +171,8 @@ func syncNoticeTask() error {
 			continue
 		}
 
+		logger.Infof("syncNoticeTask: new notice found, title=%s url=%s", row.Title, row.URL)
+
 		info := &model.Notice{
 			Title:       row.Title,
 			URL:         row.URL,
@@ -161,6 +182,13 @@ func syncNoticeTask() error {
 		if err = clientSet.DBClient.Notice.CreateNotice(ctx, info); err != nil {
 			return fmt.Errorf("notice sync task: failed to create notice: %w", err)
 		}
+
+		go func(notice *jwch.NoticeInfo) {
+			ctx := context.Background()
+			if err := commonSvc.NewCommonService(ctx, clientSet, taskQueue).ProcessAutoAdjustCourseNotice(notice); err != nil {
+				logger.Errorf("ProcessAutoAdjustCourseNotice failed, title=%s url=%s err=%v", notice.Title, notice.URL, err)
+			}
+		}(row)
 
 		// 进行消息推送
 		if ok := umeng.EnqueueAsync(func() error {
